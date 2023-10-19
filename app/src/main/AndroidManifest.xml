@@ -18,15 +18,21 @@
             android:value="AIzaSyA5pUxD_2Xi1s-bga4itPVaq-VblEHmxg8" />
 
         <activity
-            android:name=".MapsActivity"
-            android:exported="true"
-            android:label="@string/title_activity_maps" >
-
+            android:name=".MainActivity"
+            android:exported="true" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".MapsActivity"
+            android:exported="false"
+            android:label="@string/title_activity_maps">
+        </activity>
+
     </application>
 
 </manifest>
