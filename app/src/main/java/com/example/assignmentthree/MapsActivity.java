@@ -13,7 +13,11 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.android.volley.Request;
 import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -22,6 +26,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.example.assignmentthree.databinding.ActivityMapsBinding;
@@ -32,7 +37,12 @@ import com.google.android.libraries.places.api.net.PlacesClient;
 import com.google.android.libraries.places.widget.AutocompleteSupportFragment;
 import com.google.android.libraries.places.widget.listener.PlaceSelectionListener;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.Arrays;
+import java.util.Locale;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
@@ -91,7 +101,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 lat = place.getLatLng().latitude;
                 lon = place.getLatLng().longitude;
                 placeLatLng = place.getLatLng();
-                //getWeatherPin(); //for weather .. to implement
+                getWeatherPin(); //for weather
                 //getCameraPin();  //for camera  .. to implement
                 mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(placeLatLng, 11));
             }
@@ -214,6 +224,50 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
 
+    private void getWeatherPin(){
+        String url = "https://api.openweathermap.org/data/2.5/weather?lat=" + lat + "&lon=" + lon + "&appid=b25a5443d7f0a4ec8f12ea23d805201e";
+        // Request a object response from the provided URL.
+        Log.d("WeatherDebug", "URL: " + url); // Log the URL
+        JsonObjectRequest objectRequest = new JsonObjectRequest(Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject response) {
+                try {
+                    Log.d("WeatherDebug", "API response: " + response.toString()); // Log the JSON response
+
+                    //Get a JSONArray from response object
+                    JSONArray jsonArray = response.getJSONArray("weather");
+                    //Get the object that is at index 0 in our JSONArray
+                    JSONObject weatherArray = jsonArray.getJSONObject(0);
+                    //Get the main description to be used
+                    String mainDescription = weatherArray.getString("main").toLowerCase(Locale.ROOT);
+
+                    String iconName = "img_mm_weather_" + mainDescription;
+                    Log.d("WeatherDebug", "Icon name: " + iconName); // Log the icon name
+
+
+                    int icon = getResources().getIdentifier(iconName, "drawable", getPackageName());
+                    Log.d("WeatherDebug", "Icon resource ID: " + icon); // Log the icon resource ID
+
+
+                    //Add a marker to the map with data
+                    mMap.addMarker(new MarkerOptions()
+                            .position(placeLatLng)
+                            .title(weatherArray.getString("main"))
+                            .snippet(weatherArray.getString("description"))
+                            .icon(BitmapDescriptorFactory.fromResource(icon)));
+
+                } catch (JSONException e) {
+                    Log.d("error", e.toString());
+                }
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.d("volleyError","Error :" + error.getMessage());
+            }
+        });
+        queue.add(objectRequest);
+    }
 
 
 
