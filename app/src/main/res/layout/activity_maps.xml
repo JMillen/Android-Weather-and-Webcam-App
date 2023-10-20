@@ -8,14 +8,22 @@
     android:fitsSystemWindows="true"
     tools:context=".MapsActivity">
 
-    <LinearLayout
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/cv_toolbar"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="2"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
+        android:gravity="center_vertical">
 
-    </LinearLayout>
+        <fragment android:id="@+id/autocomplete_fragment"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:name="com.google.android.libraries.places.widget.AutocompleteSupportFragment"
+            />
+
+    </androidx.cardview.widget.CardView>
+
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/cl_mapView"

@@ -10,8 +10,12 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Toast;
 
+import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.Volley;
+import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -22,6 +26,13 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.example.assignmentthree.databinding.ActivityMapsBinding;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.libraries.places.api.Places;
+import com.google.android.libraries.places.api.model.Place;
+import com.google.android.libraries.places.api.net.PlacesClient;
+import com.google.android.libraries.places.widget.AutocompleteSupportFragment;
+import com.google.android.libraries.places.widget.listener.PlaceSelectionListener;
+
+import java.util.Arrays;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
@@ -29,6 +40,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private ActivityMapsBinding binding;
 
     FusedLocationProviderClient fusedLocationProviderClient;
+
+    double lat;
+    double lon;
+    LatLng placeLatLng;
+    private RequestQueue queue;
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,17 +62,54 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
+        //Initialise the places with API key
+        Places.initialize(getApplicationContext(), "AIzaSyA5pUxD_2Xi1s-bga4itPVaq-VblEHmxg8");
+
+        //Create a new placesClient
+        PlacesClient placesClient = Places.createClient(this);
+
+        //Get our autocompletefragment search view
+        AutocompleteSupportFragment autocompleteFragment = (AutocompleteSupportFragment)
+                getSupportFragmentManager().findFragmentById(R.id.autocomplete_fragment);
+
+        //Set the country of our autocomplete to only display places in New Zealand
+        autocompleteFragment.setCountries("NZ");
+
+        //Make sure our autocomplete returns only names and lat/lng
+        autocompleteFragment.setPlaceFields(Arrays.asList(Place.Field.NAME, Place.Field.LAT_LNG));
+
+        //Instantiate the RequestQueue
+        queue = Volley.newRequestQueue(this);
+
+
+        //Listener to see if a location has been clicked.
+        //Once location has been clicked, calls methods to add pins and move the camera to the selected location
+        autocompleteFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
+            @Override
+            public void onPlaceSelected(Place place) {
+                mMap.clear();
+                lat = place.getLatLng().latitude;
+                lon = place.getLatLng().longitude;
+                placeLatLng = place.getLatLng();
+                //getWeatherPin(); //for weather .. to implement
+                //getCameraPin();  //for camera  .. to implement
+                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(placeLatLng, 11));
+            }
+
+            @Override
+            public void onError(Status status) {
+                Log.i(STATUS_BAR_SERVICE, "An error occurred: " + status);
+            }
+        });
+
+
     }
 
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-
-
         getLastKnownLocation();
-        //mMap.addMarker(new MarkerOptions().position(userLocation).title("User Location"));
-        //mMap.moveCamera(CameraUpdateFactory.newLatLng(userLocation));
     }
 
 
