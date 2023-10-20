@@ -42,7 +42,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
@@ -102,7 +104,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 lon = place.getLatLng().longitude;
                 placeLatLng = place.getLatLng();
                 getWeatherPin(); //for weather
-                //getCameraPin();  //for camera  .. to implement
+                getCameraPin();  //for camera  .. to implement
                 mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(placeLatLng, 11));
             }
 
@@ -269,11 +271,52 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         queue.add(objectRequest);
     }
 
+    private void getCameraPin(){
+        String url = "https://api.windy.com/webcams/api/v3/webcams?lang=en&limit=5&offset=0&nearby=" + lat + "%2C" + lon +"%2C100&include=location";
 
+        JsonObjectRequest objectRequest = new JsonObjectRequest(Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject response) {
+                try {
 
+                    JSONArray webcams = response.getJSONArray("webcams");
 
+                    int icon = getResources().getIdentifier("img_mm_camera_teal", "drawable", getPackageName());
 
+                    for(int i = 0; i < webcams.length(); i++){
+                        JSONObject webcam = webcams.getJSONObject(i);
+                        JSONObject location = webcam.getJSONObject("location");
+                        String title = webcam.getString("title");
+                        double webcamLat = location.getDouble("latitude");
+                        double webcamLon = location.getDouble("longitude");
 
+                        // Add a marker for the camera
+                        LatLng cameraLatLng = new LatLng(webcamLat, webcamLon);
+                        mMap.addMarker(new MarkerOptions()
+                                .position(cameraLatLng)
+                                .title(title))
+                                .setIcon(BitmapDescriptorFactory.fromResource(icon));
+                    }
 
+                } catch(JSONException e) {
+                    Log.d("error", e.toString());
+                }
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.d("volleyError", "Error: " + error.getMessage());
+            }
+        }) {
+            @Override
+            public Map<String, String> getHeaders() {
+                Map<String, String> headers = new HashMap<>();
+                headers.put("x-windy-api-key", "JCtCeBUEgqU9uiHnNDPqkSAvYOJr0CJm");
+                return headers;
+            }
+        };
 
+        queue.add(objectRequest);
+
+    }
 }
