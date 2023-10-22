@@ -47,8 +47,6 @@
         android:layout_height="0dp"
         android:layout_margin="10dp"
         android:layout_weight="6"
-
         android:layout_gravity="center">
-
     </ListView>
 </LinearLayout>

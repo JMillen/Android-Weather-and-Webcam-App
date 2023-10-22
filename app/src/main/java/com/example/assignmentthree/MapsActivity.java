@@ -11,6 +11,8 @@ import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
 import android.widget.Toast;
 
 import com.android.volley.Request;
@@ -41,10 +43,13 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+
+import com.example.assignmentthree.CameraAdapter;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
@@ -56,8 +61,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     double lat;
     double lon;
     LatLng placeLatLng;
+    LatLng placeWeatherLatLng;
     private RequestQueue queue;
-
+    // Arraylist from camera titles
+    ArrayList<String> cameraTitle = new ArrayList<>();
+    // Define adapter
+    CameraAdapter adapter;
 
 
     @Override
@@ -103,8 +112,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 lat = place.getLatLng().latitude;
                 lon = place.getLatLng().longitude;
                 placeLatLng = place.getLatLng();
+                placeWeatherLatLng = new LatLng(placeLatLng.latitude, placeLatLng.longitude + 0.05);
+                int icon = getResources().getIdentifier("img_mm_marker_orange", "drawable", getPackageName());
                 getWeatherPin(); //for weather
-                getCameraPin();  //for camera  .. to implement
+                getCameraPin();  //for camera
+                mMap.addMarker(new MarkerOptions()
+                        .position(placeLatLng)
+                        .icon(BitmapDescriptorFactory.fromResource(icon)));
                 mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(placeLatLng, 11));
             }
 
@@ -114,7 +128,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
 
+        ListView listViewCameras = findViewById(R.id.lv_cameras);
+        adapter = new CameraAdapter(this, cameraTitle);
 
+        // Set the adapter to the listView
+        listViewCameras.setAdapter(adapter);
     }
 
 
@@ -173,7 +191,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
      */
     public void permissionGranted() {
         Toast.makeText(this, "GRANTED", Toast.LENGTH_SHORT).show();
-        getLastKnownLocation();
     }
 
     /**
@@ -200,29 +217,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             public void onSuccess(Location location) {
                 if (location != null) {
                     LatLng userLocation = new LatLng(location.getLatitude(), location.getLongitude());
-                    mMap.addMarker(new MarkerOptions().position(userLocation).title("User Location"));
+                    int icon = getResources().getIdentifier("img_mm_marker_orange", "drawable", getPackageName());
+                    mMap.addMarker(new MarkerOptions()
+                            .position(userLocation)
+                            .title("User Location"))
+                            .setIcon(BitmapDescriptorFactory.fromResource(icon));
                     mMap.moveCamera(CameraUpdateFactory.newLatLng(userLocation));
                 } else {
                     Toast.makeText(MapsActivity.this, "Error getting location", Toast.LENGTH_SHORT).show();
                 }
             }
         });
-    }
-
-    /**
-     * Method that takes last location and returns Latitude and Longitude
-     * of users location
-     * @param location
-     */
-    public LatLng getLatLngFromLocation(Location location) {
-        if (location != null) {
-            double lat = location.getLatitude();
-            double lon = location.getLongitude();
-            return new LatLng(lat, lon);
-        } else {
-            Toast.makeText(this, "Error getting location", Toast.LENGTH_SHORT).show();
-            return null;
-        }
     }
 
 
@@ -253,7 +258,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                     //Add a marker to the map with data
                     mMap.addMarker(new MarkerOptions()
-                            .position(placeLatLng)
+                            .position(placeWeatherLatLng)
                             .title(weatherArray.getString("main"))
                             .snippet(weatherArray.getString("description"))
                             .icon(BitmapDescriptorFactory.fromResource(icon)));
@@ -272,7 +277,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     private void getCameraPin(){
-        String url = "https://api.windy.com/webcams/api/v3/webcams?lang=en&limit=5&offset=0&nearby=" + lat + "%2C" + lon +"%2C100&include=location";
+        String url = "https://api.windy.com/webcams/api/v3/webcams?lang=en&limit=5&offset=0&nearby=" + lat + "%2C" + lon +"%2C10&include=location";
 
         JsonObjectRequest objectRequest = new JsonObjectRequest(Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
             @Override
@@ -290,6 +295,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         double webcamLat = location.getDouble("latitude");
                         double webcamLon = location.getDouble("longitude");
 
+                        // Add camera title to arrayList
+                        cameraTitle.add(title);
+
                         // Add a marker for the camera
                         LatLng cameraLatLng = new LatLng(webcamLat, webcamLon);
                         mMap.addMarker(new MarkerOptions()
@@ -297,7 +305,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                 .title(title))
                                 .setIcon(BitmapDescriptorFactory.fromResource(icon));
                     }
-
+                    // Notify the adapter that the data has changed
+                    adapter.notifyDataSetChanged();
                 } catch(JSONException e) {
                     Log.d("error", e.toString());
                 }
@@ -315,8 +324,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 return headers;
             }
         };
-
         queue.add(objectRequest);
-
     }
+
 }
