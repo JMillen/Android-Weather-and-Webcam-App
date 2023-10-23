@@ -2,16 +2,19 @@ package com.example.assignmentthree;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentActivity;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
-import android.widget.ArrayAdapter;
+import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.Toast;
 
@@ -30,6 +33,7 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.example.assignmentthree.databinding.ActivityMapsBinding;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -49,8 +53,6 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import com.example.assignmentthree.CameraAdapter;
-
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
     private GoogleMap mMap;
@@ -61,10 +63,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     double lat;
     double lon;
     LatLng placeLatLng;
+    String placeName;
     LatLng placeWeatherLatLng;
     private RequestQueue queue;
     // Arraylist from camera titles
     ArrayList<String> cameraTitle = new ArrayList<>();
+    // Define ArrayList for camera ID's
+    ArrayList<Integer> cameraIDs = new ArrayList<Integer>();
     // Define adapter
     CameraAdapter adapter;
 
@@ -108,18 +113,27 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         autocompleteFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
             @Override
             public void onPlaceSelected(Place place) {
+                // Clear the existing camera data
+                cameraTitle.clear();
+                cameraIDs.clear();
+                adapter.notifyDataSetChanged();
+
                 mMap.clear();
                 lat = place.getLatLng().latitude;
                 lon = place.getLatLng().longitude;
                 placeLatLng = place.getLatLng();
+                placeName = place.getName();
                 placeWeatherLatLng = new LatLng(placeLatLng.latitude, placeLatLng.longitude + 0.05);
                 int icon = getResources().getIdentifier("img_mm_marker_orange", "drawable", getPackageName());
                 getWeatherPin(); //for weather
                 getCameraPin();  //for camera
-                mMap.addMarker(new MarkerOptions()
+                Marker placeLocationMarker = mMap.addMarker(new MarkerOptions()
                         .position(placeLatLng)
-                        .icon(BitmapDescriptorFactory.fromResource(icon)));
+                        .icon(BitmapDescriptorFactory.fromResource(icon))
+                        .title(placeName));
+                placeLocationMarker.setTag(3);
                 mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(placeLatLng, 11));
+                adapter.notifyDataSetChanged();
             }
 
             @Override
@@ -133,6 +147,24 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         // Set the adapter to the listView
         listViewCameras.setAdapter(adapter);
+
+        listViewCameras.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int position, long id) {
+                // Get the camera ID from the JsonArray based on the position
+                try{
+                    int cameraID = cameraIDs.get(position);
+
+                    // Start the CameraPreviewActivity with the camera ID
+                    Intent intent = new Intent(MapsActivity.this, CameraDetailsActivity.class);
+                    intent.putExtra("camera_id", cameraID);
+                    startActivity(intent);
+                } catch (Exception e){
+                    Log.d("error", e.toString());
+                }
+
+            }
+        });
     }
 
 
@@ -140,6 +172,28 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
         getLastKnownLocation();
+
+        mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+            @Override
+            public boolean onMarkerClick(@NonNull Marker marker) {
+                // Get the tag from the marker
+                Integer cameraID = (Integer) marker.getTag();
+
+                // Checks if weather marker, user marker or place marker was clicked
+                if(cameraID != null && (cameraID.equals(1) || cameraID.equals(2) || cameraID.equals(3))){
+                    marker.showInfoWindow();
+                } else {
+                    // Check that the camera ID isn't null
+                    if (cameraID != null) {
+                        // Start the CameraDetailsActivity with the camera ID
+                        Intent intent = new Intent(MapsActivity.this, CameraDetailsActivity.class);
+                        intent.putExtra("camera_id", cameraID);
+                        startActivity(intent);
+                    }
+                }
+                return true;
+            }
+        });
     }
 
 
@@ -218,10 +272,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 if (location != null) {
                     LatLng userLocation = new LatLng(location.getLatitude(), location.getLongitude());
                     int icon = getResources().getIdentifier("img_mm_marker_orange", "drawable", getPackageName());
-                    mMap.addMarker(new MarkerOptions()
+                    Marker userLocationMarker = mMap.addMarker(new MarkerOptions()
                             .position(userLocation)
-                            .title("User Location"))
-                            .setIcon(BitmapDescriptorFactory.fromResource(icon));
+                            .title("User Location"));
+                    userLocationMarker.setIcon(BitmapDescriptorFactory.fromResource(icon));
+                    userLocationMarker.setTag(2);
                     mMap.moveCamera(CameraUpdateFactory.newLatLng(userLocation));
                 } else {
                     Toast.makeText(MapsActivity.this, "Error getting location", Toast.LENGTH_SHORT).show();
@@ -257,12 +312,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
 
                     //Add a marker to the map with data
-                    mMap.addMarker(new MarkerOptions()
+                    Marker weatherMarker = mMap.addMarker(new MarkerOptions()
                             .position(placeWeatherLatLng)
                             .title(weatherArray.getString("main"))
                             .snippet(weatherArray.getString("description"))
                             .icon(BitmapDescriptorFactory.fromResource(icon)));
-
+                    weatherMarker.setTag(1);
                 } catch (JSONException e) {
                     Log.d("error", e.toString());
                 }
@@ -294,17 +349,22 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         String title = webcam.getString("title");
                         double webcamLat = location.getDouble("latitude");
                         double webcamLon = location.getDouble("longitude");
+                        int cameraID = webcam.getInt("webcamId");
 
                         // Add camera title to arrayList
                         cameraTitle.add(title);
+                        // Add camera ID to arrayList
+                        cameraIDs.add(cameraID);
 
                         // Add a marker for the camera
                         LatLng cameraLatLng = new LatLng(webcamLat, webcamLon);
-                        mMap.addMarker(new MarkerOptions()
+                        Marker marker = mMap.addMarker(new MarkerOptions()
                                 .position(cameraLatLng)
-                                .title(title))
-                                .setIcon(BitmapDescriptorFactory.fromResource(icon));
+                                .title(title));
+                        marker.setTag(cameraID);
+                        marker.setIcon(BitmapDescriptorFactory.fromResource(icon));
                     }
+
                     // Notify the adapter that the data has changed
                     adapter.notifyDataSetChanged();
                 } catch(JSONException e) {

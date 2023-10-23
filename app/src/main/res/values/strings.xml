@@ -2,4 +2,8 @@
     <string name="app_name">Map Marker</string>
     <string name="title_activity_maps">MapsActivity</string>
     <string name="button_start">Start</string>
+    <string name="title_lat">Latitude: </string>
+    <string name="title_lon">longitude: </string>
+    <string name="title_city">City: </string>
+    <string name="title_region">Region: </string>
 </resources>
