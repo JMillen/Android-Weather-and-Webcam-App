@@ -89,7 +89,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mapFragment.getMapAsync(this);
 
         //Initialise the places with API key
-        Places.initialize(getApplicationContext(), "AIzaSyA5pUxD_2Xi1s-bga4itPVaq-VblEHmxg8");
+        Places.initialize(getApplicationContext(), "Use-API-key-here");
 
         //Create a new placesClient
         PlacesClient placesClient = Places.createClient(this);
@@ -287,7 +287,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
 
     private void getWeatherPin(){
-        String url = "https://api.openweathermap.org/data/2.5/weather?lat=" + lat + "&lon=" + lon + "&appid=b25a5443d7f0a4ec8f12ea23d805201e";
+        String url = "https://api.openweathermap.org/data/2.5/weather?lat=" + lat + "&lon=" + lon + "&appid=Use-API-key-here";
         // Request a object response from the provided URL.
         Log.d("WeatherDebug", "URL: " + url); // Log the URL
         JsonObjectRequest objectRequest = new JsonObjectRequest(Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
@@ -380,7 +380,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public Map<String, String> getHeaders() {
                 Map<String, String> headers = new HashMap<>();
-                headers.put("x-windy-api-key", "JCtCeBUEgqU9uiHnNDPqkSAvYOJr0CJm");
+                headers.put("x-windy-api-key", "Use-API-key-here");
                 return headers;
             }
         };
