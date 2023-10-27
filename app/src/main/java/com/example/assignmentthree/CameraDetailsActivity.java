@@ -106,7 +106,7 @@ public class CameraDetailsActivity extends AppCompatActivity {
             @Override
             public Map<String, String> getHeaders() {
                 Map<String, String> headers = new HashMap<>();
-                headers.put("x-windy-api-key", "JCtCeBUEgqU9uiHnNDPqkSAvYOJr0CJm");
+                headers.put("x-windy-api-key", "Use-API-key-here");
                 return headers;
             }
         };
@@ -153,7 +153,7 @@ public class CameraDetailsActivity extends AppCompatActivity {
             @Override
             public Map<String, String> getHeaders() {
                 Map<String, String> headers = new HashMap<>();
-                headers.put("x-windy-api-key", "JCtCeBUEgqU9uiHnNDPqkSAvYOJr0CJm");
+                headers.put("x-windy-api-key", "Use-API-key-here");
                 return headers;
             }
         };
